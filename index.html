@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GharKirana AI Pro - Next-Gen Hyperlocal App</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Leaflet OpenStreetMap CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+
+<body>
+
+    <!-- Top Slim Header -->
+    <header class="navbar">
+        <div class="nav-left">
+            <div class="nav-brand">📍 GharKirana <span class="badge-pro">PRO</span></div>
+            <div class="location-picker">
+                <label for="store-select">Store:</label>
+                <select id="store-select" onchange="changeStore()"></select>
+            </div>
+        </div>
+
+        <div class="nav-right">
+            <button class="btn btn-ai-nav" onclick="toggleAIChat()">✨ AI Chef</button>
+            <button class="btn btn-outline" onclick="toggleMapModal()">🗺️ Map</button>
+
+            <div id="auth-container">
+                <button class="btn btn-secondary" onclick="toggleAuthModal(true)">Login</button>
+            </div>
+
+            <div class="cart-pill" onclick="toggleCart()">
+                🛒 <span id="cart-count">0</span> | ₹<span id="cart-total-nav">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Free Delivery Target Progress Bar -->
+    <div class="free-delivery-banner">
+        <div class="banner-inner">
+            <span id="delivery-threshold-msg">🚚 Add items worth ₹500 for <strong>FREE Delivery</strong></span>
+            <div class="progress-bar-bg">
+                <div id="delivery-progress" class="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Voice Toolbar -->
+    <div class="search-toolbar">
+        <div class="toolbar-container">
+            <div class="search-input-wrap">
+                <span>🔍</span>
+                <input type="text" id="search-input" placeholder="Search Atta, Dal, Cold Drinks, Chips, Shampoo..."
+                    oninput="handleSearch()">
+                <button id="voice-search-btn" class="mic-btn" onclick="startVoiceSearch()"
+                    title="Search catalog by Voice">🎙️</button>
+            </div>
+            <div class="sort-wrap">
+                <label for="sort-select">Sort By:</label>
+                <select id="sort-select" onchange="handleSort()">
+                    <option value="default">Featured</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="rating">Top Rated</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main View Container -->
+    <main class="main-layout">
+
+        <!-- PAGE 1: STOREFRONT -->
+        <section id="store-page" class="app-page active">
+            <div class="store-banner card">
+                <div class="store-info-left">
+                    <h2 id="current-store-name">Gupta General Store</h2>
+                    <p id="current-store-address" class="sub-text">Shop 4, Block C Market (0.4 km away)</p>
+                    <div class="store-meta">
+                        <span id="current-store-status" class="badge badge-green">Open • 20-30 min</span>
+                        <span id="current-store-min" class="badge badge-gray">Min Order: ₹150</span>
+                        <span class="badge badge-blue">Dynamic Delivery Charges</span>
+                    </div>
+                </div>
+                <button class="btn btn-map-quick" onclick="toggleMapModal()">📍 View On Map</button>
+            </div>
+
+            <div class="category-chips">
+                <button class="chip active" onclick="filterCategory('all')">All Items</button>
+                <button class="chip" onclick="filterCategory('Snacks & Biscuits')">Biscuits & Snacks</button>
+                <button class="chip" onclick="filterCategory('Cold Drinks & Beverages')">Drinks & Beverages</button>
+                <button class="chip" onclick="filterCategory('Beauty & Personal Care')">Beauty & Personal Care</button>
+                <button class="chip" onclick="filterCategory('Cleaning & Laundry')">Detergents & Cleaning</button>
+                <button class="chip" onclick="filterCategory('Atta & Flours')">Atta & Flours</button>
+                <button class="chip" onclick="filterCategory('Dals & Rice')">Dals & Rice</button>
+                <button class="chip" onclick="filterCategory('Oils & Ghee')">Oils & Ghee</button>
+                <button class="chip" onclick="filterCategory('Dairy & Daily')">Dairy & Daily</button>
+                <button class="chip" onclick="filterCategory('Spices')">Spices</button>
+            </div>
+
+            <div id="product-grid" class="product-grid"></div>
+        </section>
+
+        <!-- PAGE 2: CATEGORIES & TOP BRANDS DIRECTORY -->
+        <section id="categories-page" class="app-page">
+            <div class="card">
+                <h2>🏷️ Top Partnered Brands</h2>
+                <p class="sub-text">Click any brand to filter genuine grocery products.</p>
+                <div class="brand-showcase-grid">
+                    <div class="brand-badge-card" onclick="filterByBrand('Amul')">🥛
+                        <strong>Amul</strong><br><small>Dairy & Ghee</small>
+                    </div>
+                    <div class="brand-badge-card" onclick="filterByBrand('Tata')">🌾 <strong>Tata
+                            Sampann</strong><br><small>Dals & Salt</small></div>
+                    <div class="brand-badge-card" onclick="filterByBrand('Aashirvaad')">🌾
+                        <strong>Aashirvaad</strong><br><small>Pure Atta</small>
+                    </div>
+                    <div class="brand-badge-card" onclick="filterByBrand('Fortune')">🫒
+                        <strong>Fortune</strong><br><small>Oils & Refined</small>
+                    </div>
+                    <div class="brand-badge-card" onclick="filterByBrand('Britannia')">🍪
+                        <strong>Britannia</strong><br><small>Biscuits & Cakes</small>
+                    </div>
+                    <div class="brand-badge-card" onclick="filterByBrand('Haldiram')">🥜
+                        <strong>Haldiram's</strong><br><small>Namkeen & Sweets</small>
+                    </div>
+                    <div class="brand-badge-card" onclick="filterByBrand('Surf Excel')">🧼 <strong>Surf
+                            Excel</strong><br><small>Detergent & Wash</small></div>
+                    <div class="brand-badge-card" onclick="filterByBrand('Dettol')">🧴
+                        <strong>Dettol</strong><br><small>Soap & Hygiene</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🗂️ Complete Category Directory</h2>
+                <p class="sub-text">Quick search any item across local stores.</p>
+
+                <div class="category-directory-grid">
+                    <div class="directory-column">
+                        <h4>🍞 Snacks & Bakery</h4>
+                        <ul>
+                            <li onclick="searchFromDirectory('Parle-G')">Parle-G Glucose</li>
+                            <li onclick="searchFromDirectory('Good Day')">Good Day Butter Cookies</li>
+                            <li onclick="searchFromDirectory('Bhujia')">Haldiram's Sev Bhujia</li>
+                            <li onclick="searchFromDirectory('Aloo Bhujia')">Aloo Bhujia Namkeen</li>
+                            <li onclick="searchFromDirectory('Chips')">Lay's Masala Chips</li>
+                        </ul>
+                    </div>
+                    <div class="directory-column">
+                        <h4>🥤 Beverages & Drinks</h4>
+                        <ul>
+                            <li onclick="searchFromDirectory('Coca-Cola')">Coca-Cola 750ml</li>
+                            <li onclick="searchFromDirectory('Thums Up')">Thums Up Charged</li>
+                            <li onclick="searchFromDirectory('Tea')">Wagh Bakri Leaf Tea</li>
+                            <li onclick="searchFromDirectory('Frooti')">Frooti Mango Drink</li>
+                        </ul>
+                    </div>
+                    <div class="directory-column">
+                        <h4>🧴 Personal Care</h4>
+                        <ul>
+                            <li onclick="searchFromDirectory('Dettol')">Dettol Bath Soap</li>
+                            <li onclick="searchFromDirectory('Dove')">Dove Moisturizing Bar</li>
+                            <li onclick="searchFromDirectory('Face Wash')">Himalaya Neem Face Wash</li>
+                            <li onclick="searchFromDirectory('Shampoo')">Head & Shoulders Menthol</li>
+                        </ul>
+                    </div>
+                    <div class="directory-column">
+                        <h4>🧼 Laundry & Home Care</h4>
+                        <ul>
+                            <li onclick="searchFromDirectory('Surf Excel')">Surf Excel Easy Wash</li>
+                            <li onclick="searchFromDirectory('Vim')">Vim Dishwash Bar</li>
+                            <li onclick="searchFromDirectory('Lizol')">Lizol Floor Cleaner</li>
+                        </ul>
+                    </div>
+                    <div class="directory-column">
+                        <h4>🌾 Staples & Monthly Ration</h4>
+                        <ul>
+                            <li onclick="searchFromDirectory('Atta')">Chakki Fresh Atta</li>
+                            <li onclick="searchFromDirectory('Toor Dal')">Tata Sampann Toor Dal</li>
+                            <li onclick="searchFromDirectory('Mustard Oil')">Fortune Mustard Oil</li>
+                            <li onclick="searchFromDirectory('Milk')">Amul Toned Milk</li>
+                            <li onclick="searchFromDirectory('Salt')">Tata Vacuum Salt</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 3: OFFERS & BACHAT -->
+        <section id="offers-page" class="app-page">
+            <div class="card">
+                <h2>🎉 Active Bachat Offers & Discount Coupons</h2>
+                <p class="sub-text">Apply voucher codes during checkout to maximize family savings.</p>
+
+                <div class="offers-grid">
+                    <div class="coupon-card">
+                        <div class="coupon-top">
+                            <span class="coupon-code">BACHAT50</span>
+                            <button class="btn btn-outline" onclick="applyCoupon('BACHAT50', 50)">Apply</button>
+                        </div>
+                        <p>Flat ₹50 OFF on household orders above ₹499.</p>
+                        <small class="sub-text">Valid for all registered families</small>
+                    </div>
+
+                    <div class="coupon-card">
+                        <div class="coupon-top">
+                            <span class="coupon-code">FIRSTKIRANA</span>
+                            <button class="btn btn-outline" onclick="applyCoupon('FIRSTKIRANA', 75)">Apply</button>
+                        </div>
+                        <p>Flat ₹75 OFF on your first monthly grocery order.</p>
+                        <small class="sub-text">New user special offer</small>
+                    </div>
+
+                    <div class="coupon-card">
+                        <div class="coupon-top">
+                            <span class="coupon-code">FREEDELIVERY</span>
+                            <button class="btn btn-outline" onclick="applyCoupon('FREEDELIVERY', 30)">Apply</button>
+                        </div>
+                        <p>100% Free delivery on any basket value.</p>
+                        <small class="sub-text">Weekend special bachat</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🎁 Middle-Class Bachat Scratch Card</h3>
+                <p class="sub-text">Click the surprise card to unlock instant cashback coins.</p>
+                <div id="scratch-box" class="scratch-card" onclick="revealScratchCard()">
+                    <span id="scratch-text">✨ Tap to Scratch & Win Cashback!</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 4: DIGITAL KHATA & PAYMENTS -->
+        <section id="khata-page" class="app-page">
+            <div class="card">
+                <h2>📒 Digital Khata (Udhaar / Credit Ledger)</h2>
+                <p class="sub-text">Direct trusted store credit between you and your local Kirana shopkeeper.</p>
+
+                <div class="khata-balance-card">
+                    <div>
+                        <span class="sub-text">Current Udhaar / Khata Due</span>
+                        <h2 id="khata-due-amount" style="color: #dc2626; margin-top: 4px;">₹450.00</h2>
+                        <small class="sub-text">Credit Limit: ₹3,000.00 | Shop: Gupta General Store</small>
+                    </div>
+                    <button class="btn btn-primary" onclick="settleKhataPayment()">💳 Pay Due via UPI</button>
+                </div>
+
+                <h4 style="margin: 18px 0 10px;">📜 Recent Khata Entries</h4>
+                <div id="khata-transactions" class="khata-list">
+                    <div class="khata-row">
+                        <div><strong>Monthly Ration Entry</strong><br><small class="sub-text">Atta 10kg + Oil 1L</small>
+                        </div>
+                        <span style="color:#dc2626; font-weight:700;">+₹450 Due</span>
+                    </div>
+                    <div class="khata-row">
+                        <div><strong>UPI Payment Settle</strong><br><small class="sub-text">Paid via PhonePe</small>
+                        </div>
+                        <span style="color:#16a34a; font-weight:700;">-₹1,200 Paid</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>💳 Supported Doorstep Payments</h2>
+                <p class="sub-text">Choose your payment mode during checkout.</p>
+                <div class="payment-methods-grid">
+                    <div class="payment-method-item">📱 <strong>Instant UPI</strong> (GPay, PhonePe, Paytm QR)</div>
+                    <div class="payment-method-item">💵 <strong>Cash on Delivery</strong> (Exact cash or change)</div>
+                    <div class="payment-method-item">📒 <strong>Monthly Khata</strong> (End of month settlement)</div>
+                    <div class="payment-method-item">💳 <strong>Sodexo & Meal Cards</strong> (Accepted for food items)
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 5: SUBSCRIPTIONS & PARCHI -->
+        <section id="subscription-page" class="app-page">
+            <div class="card">
+                <h2>🥛 Daily Morning Milk & Bread Subscription</h2>
+                <p class="sub-text">Auto-delivered fresh at 6:30 AM every day. Pause or resume anytime.</p>
+
+                <div class="subscription-item-row">
+                    <div>
+                        <strong>Amul Taaza Milk (500ml Pouch)</strong>
+                        <p class="sub-text">Daily 2 Packets • ₹54 / day</p>
+                    </div>
+                    <button id="sub-btn-1" class="btn btn-primary" onclick="toggleSubscription(1)">Active
+                        (Pause)</button>
+                </div>
+
+                <div class="subscription-item-row" style="margin-top: 10px;">
+                    <div>
+                        <strong>Fresh Daily Bread (400g)</strong>
+                        <p class="sub-text">Alternate Days • ₹40 / delivery</p>
+                    </div>
+                    <button id="sub-btn-2" class="btn btn-secondary" onclick="toggleSubscription(2)">Subscribe
+                        Now</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📝 Handwritten Parchi / Paper List Importer</h2>
+                <p class="sub-text">Paste or type your family's handwritten grocery slip items. AI will find and add
+                    them all.</p>
+                <textarea id="parchi-input"
+                    placeholder="e.g.&#10;10kg Atta&#10;1L Mustard oil&#10;Tata namak 1kg&#10;Dettol soap pack&#10;2 Parle G packet"
+                    rows="5"></textarea>
+                <button class="btn btn-order" onclick="processParchiList()" style="margin-top: 8px;">🚀 Convert Parchi
+                    to Cart</button>
+            </div>
+        </section>
+
+        <!-- Persistent Cart Aside -->
+        <aside id="cart-drawer" class="cart-drawer card">
+            <div class="cart-header">
+                <h3>🛍️ Your Delivery Bag</h3>
+                <button class="close-cart-btn" onclick="toggleCart()">✕</button>
+            </div>
+
+            <div id="cart-items" class="cart-items-list">
+                <p class="empty-text">Your basket is empty. Add items from store!</p>
+            </div>
+
+            <div class="bill-summary">
+                <div class="bill-row">
+                    <span>Item Total</span>
+                    <span>₹<span id="bill-subtotal">0</span></span>
+                </div>
+                <div class="bill-row">
+                    <span>Delivery Fee</span>
+                    <span id="delivery-fee-display" style="font-weight:700;">₹30</span>
+                </div>
+                <div class="bill-row" id="coupon-discount-row" style="display:none; color:#16a34a;">
+                    <span>Coupon Discount (<span id="coupon-name"></span>)</span>
+                    <span>-₹<span id="coupon-discount-val">0</span></span>
+                </div>
+                <div class="sub-text" id="delivery-discount-note" style="font-size:0.75rem; color:#16a34a;"></div>
+                <hr>
+                <div class="bill-row total">
+                    <strong>Grand Total</strong>
+                    <strong>₹<span id="bill-grand-total">0</span></strong>
+                </div>
+            </div>
+
+            <form id="order-form" onsubmit="placeOrder(event)">
+                <h4>Delivery & Contact Details</h4>
+                <input type="text" id="cust-name" placeholder="Your Full Name" required>
+                <input type="tel" id="cust-phone" placeholder="10-digit Phone Number" required>
+                <textarea id="cust-address" placeholder="House/Flat No, Landmark, Society" rows="2" required></textarea>
+
+                <label style="font-size: 0.8rem; font-weight: 600; color: #475569;">Payment Method:</label>
+                <select id="payment-mode">
+                    <option value="Cash on Delivery (COD)">Cash on Delivery (COD)</option>
+                    <option value="UPI on Delivery">UPI Scanner on Delivery</option>
+                    <option value="Monthly Khata (Pre-Approved)">Monthly Khata / Udhaar</option>
+                    <option value="Sodexo / Meal Card">Sodexo / Meal Card</option>
+                </select>
+
+                <button type="submit" class="btn btn-order">Place Delivery Order 🚀</button>
+            </form>
+        </aside>
+    </main>
+
+    <!-- ================= MODERN BOTTOM FLOATING NAVIGATION BAR ================= -->
+    <nav class="bottom-dock-nav">
+        <div class="dock-container">
+            <button class="dock-item active" onclick="navigateToPage('store-page', this)">
+                <span class="dock-icon">🏪</span>
+                <span class="dock-label">Store</span>
+            </button>
+
+            <button class="dock-item" onclick="navigateToPage('categories-page', this)">
+                <span class="dock-icon">🗂️</span>
+                <span class="dock-label">Categories</span>
+            </button>
+
+            <button class="dock-item dock-ai-highlight" onclick="toggleAIChat()">
+                <span class="dock-icon">✨</span>
+                <span class="dock-label">AI Chef</span>
+            </button>
+
+            <button class="dock-item" onclick="navigateToPage('offers-page', this)">
+                <span class="dock-icon">🏷️</span>
+                <span class="dock-label">Offers</span>
+                <span class="dock-badge">3</span>
+            </button>
+
+            <button class="dock-item" onclick="navigateToPage('khata-page', this)">
+                <span class="dock-icon">📒</span>
+                <span class="dock-label">Khata</span>
+            </button>
+
+            <button class="dock-item" onclick="navigateToPage('subscription-page', this)">
+                <span class="dock-icon">🥛</span>
+                <span class="dock-label">Parchi</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Google AI Live Chef Assistant (Floating Widget) -->
+    <div id="ai-chat-widget" class="ai-widget card">
+        <div class="ai-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.4rem;">✨</span>
+                <div>
+                    <h4 style="margin:0; font-size:0.95rem;">Google AI Chef & Grocery Engine</h4>
+                    <span class="sub-text" style="color:#16a34a; font-size:0.75rem;">● Live • Real-Time Recipe to
+                        Cart</span>
+                </div>
+            </div>
+            <button class="close-modal-btn" onclick="toggleAIChat()">✕</button>
+        </div>
+
+        <div id="ai-chat-messages" class="ai-messages">
+            <div class="ai-msg bot">
+                Namaste! 🙏 Mai <strong>Google AI</strong> se live connected hoon. Aaj kya khane ya banane ka mann hai?
+                Voice mic dabakar bolo ya type karo (e.g. <em>"Low calorie breakfast"</em>, <em>"Punjabi Kadai
+                    Paneer"</em>, <em>"Hostel evening party snacks"</em>). Mai poori recipe aur ingredients live nikaal
+                dunga!
+            </div>
+        </div>
+
+        <!-- AI Voice Input Box -->
+        <div class="ai-input-box">
+            <input type="text" id="ai-user-query" placeholder="Type or click mic to speak..."
+                onkeydown="if(event.key==='Enter') sendGoogleAIMessage()">
+            <button id="ai-voice-btn" class="mic-btn" onclick="startAIVoiceSearch()"
+                title="Click to Speak to Google AI">🎙️</button>
+            <button class="btn btn-primary" onclick="sendGoogleAIMessage()">Send</button>
+        </div>
+    </div>
+
+    <!-- Live Delivery Boy Tracker Modal -->
+    <div id="tracker-modal" class="modal">
+        <div class="modal-content card" style="max-width: 600px;">
+            <div class="modal-header">
+                <div>
+                    <h3>🚴 Live Delivery Partner Tracker</h3>
+                    <p class="sub-text">Tracking Order from <strong id="tracker-store-name">Gupta General Store</strong>
+                    </p>
+                </div>
+                <button class="close-modal-btn" onclick="toggleTrackerModal(false)">✕</button>
+            </div>
+
+            <div class="stepper-wrapper">
+                <div class="stepper-item completed" id="step-1">
+                    <div class="step-counter">1</div>
+                    <div class="step-name">Order Placed</div>
+                </div>
+                <div class="stepper-item active" id="step-2">
+                    <div class="step-counter">2</div>
+                    <div class="step-name">Packing at Store</div>
+                </div>
+                <div class="stepper-item" id="step-3">
+                    <div class="step-counter">3</div>
+                    <div class="step-name">Out for Delivery</div>
+                </div>
+                <div class="stepper-item" id="step-4">
+                    <div class="step-counter">4</div>
+                    <div class="step-name">Delivered</div>
+                </div>
+            </div>
+
+            <div id="tracker-map-box"
+                style="height: 220px; border-radius: 8px; margin: 14px 0; border: 1px solid #cbd5e1;"></div>
+
+            <div class="rider-info-card">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="rider-avatar">🛵</div>
+                    <div>
+                        <strong>Ramesh Kumar (Delivery Partner)</strong>
+                        <p class="sub-text">Arriving in approx <span id="rider-eta"
+                                style="color:#16a34a; font-weight:700;">12-15 mins</span></p>
+                    </div>
+                </div>
+                <a href="tel:919876543210" class="btn btn-outline" style="text-decoration:none;">📞 Call Partner</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Household Analytics & History Modal -->
+    <div id="history-modal" class="modal">
+        <div class="modal-content card" style="max-width: 650px;">
+            <div class="modal-header">
+                <div>
+                    <h3>📊 Monthly Household Shopping Analytics</h3>
+                    <p class="sub-text">Track your household budget and delivery records.</p>
+                </div>
+                <button class="close-modal-btn" onclick="toggleHistoryModal(false)">✕</button>
+            </div>
+
+            <div class="analytics-stat-grid">
+                <div class="stat-card">
+                    <span class="sub-text">Total Spend This Month</span>
+                    <h3 id="stat-month-spend" style="color:#0f172a; margin-top:4px;">₹0</h3>
+                </div>
+                <div class="stat-card">
+                    <span class="sub-text">Total Orders Placed</span>
+                    <h3 id="stat-month-orders" style="color:#0284c7; margin-top:4px;">0</h3>
+                </div>
+                <div class="stat-card">
+                    <span class="sub-text">Delivery Fees Saved</span>
+                    <h3 id="stat-saved" style="color:#16a34a; margin-top:4px;">₹0</h3>
+                </div>
+            </div>
+
+            <h4 style="margin: 16px 0 8px;">📜 Detailed Order History</h4>
+            <div id="orders-history-list" style="max-height: 260px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- Interactive Map Modal -->
+    <div id="map-modal" class="modal">
+        <div class="modal-content modal-map card">
+            <div class="modal-header">
+                <div>
+                    <h3>🗺️ Nearby Kirana Stores Map</h3>
+                    <p class="sub-text">Click on any store marker to inspect status or switch shopping.</p>
+                </div>
+                <button class="close-modal-btn" onclick="toggleMapModal()">✕</button>
+            </div>
+            <div id="map-container" class="map-render-box"></div>
+            <div class="map-footer">
+                <button class="btn btn-secondary" onclick="locateUserGPS()">📍 Locate My Device</button>
+                <span class="sub-text">Showing stores within 2.5 km radius</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authentication Modal (Login / Signup) -->
+    <div id="auth-modal" class="modal">
+        <div class="modal-content card" style="max-width: 400px; text-align: left;">
+            <button class="close-modal-btn" onclick="toggleAuthModal(false)">✕</button>
+            <div class="auth-tabs">
+                <button id="tab-login-btn" class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+                <button id="tab-signup-btn" class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)" style="margin-top: 14px;">
+                <input type="tel" id="login-phone" placeholder="Registered Phone Number" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 6px;">Login to
+                    Account</button>
+            </form>
+
+            <form id="signup-form" onsubmit="handleSignup(event)" style="margin-top: 14px; display: none;">
+                <input type="text" id="signup-name" placeholder="Full Name" required>
+                <input type="tel" id="signup-phone" placeholder="Phone Number (10 digits)" required>
+                <input type="text" id="signup-address" placeholder="Default Home Delivery Address" required>
+                <input type="password" id="signup-password" placeholder="Set Password" required>
+                <button type="submit" class="btn btn-order" style="width: 100%; margin-top: 6px;">Create
+                    Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Product Details & Customer Review Modal -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content modal-detail card">
+            <button class="close-modal-btn" onclick="closeDetailModal()">✕</button>
+            <div class="modal-body-grid">
+                <div class="modal-img-col">
+                    <img id="modal-item-img" src="" alt="Product">
+                </div>
+                <div class="modal-info-col">
+                    <span id="modal-item-category" class="badge badge-gray">Category</span>
+                    <h2 id="modal-item-title">Product Name</h2>
+                    <p id="modal-item-desc" class="modal-desc">Product description goes here.</p>
+
+                    <div class="spec-grid">
+                        <div><strong>Pack Size:</strong> <span id="modal-item-unit">1 kg</span></div>
+                        <div><strong>Shelf Life:</strong> <span id="modal-item-shelf">6 Months</span></div>
+                        <div><strong>In Stock:</strong> <span id="modal-item-stock">Yes</span></div>
+                    </div>
+
+                    <div class="modal-price-row">
+                        <span class="modal-price">₹<span id="modal-item-price">0</span></span>
+                        <button id="modal-add-btn" class="btn btn-primary">+ Add to Cart</button>
+                    </div>
+
+                    <div class="reviews-section">
+                        <hr>
+                        <div class="reviews-header">
+                            <h3>Customer Reviews ⭐ <span id="modal-item-rating">4.5</span></h3>
+                        </div>
+                        <div id="modal-reviews-list" class="reviews-list"></div>
+
+                        <form id="add-review-form" onsubmit="submitReview(event)">
+                            <h4>Write a Verified Review</h4>
+                            <div class="rating-input-row">
+                                <label>Rating:</label>
+                                <select id="new-review-rating">
+                                    <option value="5">⭐⭐⭐⭐⭐ (5/5 Excellent)</option>
+                                    <option value="4">⭐⭐⭐⭐ (4/5 Good)</option>
+                                    <option value="3">⭐⭐⭐ (3/5 Average)</option>
+                                    <option value="2">⭐⭐ (2/5 Poor)</option>
+                                    <option value="1">⭐ (1/5 Terrible)</option>
+                                </select>
+                            </div>
+                            <input type="text" id="new-reviewer-name" placeholder="Your Name" required>
+                            <textarea id="new-review-comment"
+                                placeholder="Share your experience (quality, taste, freshness)..." rows="2"
+                                required></textarea>
+                            <button type="submit" class="btn btn-secondary">Submit Review</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Success Modal -->
+    <div id="order-modal" class="modal">
+        <div class="modal-content card" style="text-align: center; max-width: 420px;">
+            <div style="font-size: 3rem;">✅</div>
+            <h3>Order Placed Successfully!</h3>
+            <p id="order-modal-details" class="sub-text">Dispatched to local shopkeeper.</p>
+
+            <div style="display:flex; flex-direction:column; gap:8px; margin: 16px 0;">
+                <div id="whatsapp-redirect-container"></div>
+                <button class="btn btn-primary" onclick="openTrackerAfterOrder()">🚴 Track Delivery Partner
+                    Live</button>
+            </div>
+
+            <button class="btn btn-secondary" onclick="closeOrderModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
